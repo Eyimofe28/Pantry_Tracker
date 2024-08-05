@@ -39,6 +39,8 @@ export default function Home() {
   const itemsPerPage = 3
 
   const updateInventory = async () => {
+    if (typeof window === 'undefined') return // Ensure this code runs only on client side
+
     const snapshot = query(collection(firestore, 'inventory'))
     const docs = await getDocs(snapshot)
     const inventoryList = []
@@ -50,6 +52,8 @@ export default function Home() {
   }
 
   const addItem = async (item) => {
+    if (typeof window === 'undefined') return // Ensure this code runs only on client side
+
     const docRef = doc(collection(firestore, 'inventory'), item)
     const docSnap = await getDoc(docRef)
     if (docSnap.exists()) {
@@ -62,6 +66,8 @@ export default function Home() {
   }
 
   const removeItem = async (item) => {
+    if (typeof window === 'undefined') return // Ensure this code runs only on client side
+
     const docRef = doc(collection(firestore, 'inventory'), item)
     const docSnap = await getDoc(docRef)
     if (docSnap.exists()) {
