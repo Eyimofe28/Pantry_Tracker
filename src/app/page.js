@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Box, Stack, Typography, Button, Modal, TextField } from '@mui/material'
-// import FoodImage from './White_Food.jpg'
 import { firestore } from '@/firebase'
 import {
   collection,
@@ -32,8 +31,12 @@ const style = {
 
 export default function Home() {
   const [inventory, setInventory] = useState([])
+  const [filteredInventory, setFilteredInventory] = useState([])
   const [open, setOpen] = useState(false)
   const [itemName, setItemName] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 3
 
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, 'inventory'))
@@ -43,6 +46,7 @@ export default function Home() {
       inventoryList.push({ name: doc.id, ...doc.data() })
     })
     setInventory(inventoryList)
+    setFilteredInventory(inventoryList)
   }
 
   const addItem = async (item) => {
@@ -78,6 +82,27 @@ export default function Home() {
   const handleOpen = () => setOpen(true)
   const handleClose = () => setOpen(false)
 
+  const handleSearchChange = (e) => {
+    const query = e.target.value.toLowerCase()
+    setSearchQuery(query)
+    const filtered = inventory.filter(item => item.name.toLowerCase().includes(query))
+    setFilteredInventory(filtered)
+    setCurrentPage(1) // Reset to the first page on search
+  }
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber)
+  }
+
+  // Calculate the total number of pages
+  const totalPages = Math.ceil(filteredInventory.length / itemsPerPage)
+
+  // Slice the filtered inventory to get the items for the current page
+  const paginatedItems = filteredInventory.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
   return (
     <Box
       width="100vw"
@@ -88,7 +113,6 @@ export default function Home() {
       alignItems={'center'}
       gap={2}
       sx={{
-        // backgroundImage: `url(${FoodImage})` FFEAE3,
         backgroundColor: '#352F44',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -153,6 +177,15 @@ export default function Home() {
         borderRadius={2}
         boxShadow={3}
       >
+        <TextField
+          label="Search Inventory"
+          variant="outlined"
+          fullWidth
+          value={searchQuery}
+          onChange={handleSearchChange}
+          sx={{ mt: 2 }}
+        />
+
         <Box
           width="100%"
           bgcolor={'#B9B4C7'}
@@ -160,6 +193,7 @@ export default function Home() {
           justifyContent={'space-between'}
           alignItems={'center'}
           py={2}
+          mt={3}
         >
           <Typography variant={'h4'} color={'white'} textAlign={'center'} ml={2}>
             Inventory Items
@@ -168,69 +202,97 @@ export default function Home() {
             Quantity
           </Typography>
         </Box>
+        
         <Stack
           width="100%"
           spacing={2}
           sx={{ overflowY: 'auto', maxHeight: 300 }}
         >
-          {inventory.map(({ name, quantity }) => (
-            <Box
-              key={name}
-              display={'flex'}
-              justifyContent={'space-between'}
-              alignItems={'center'}
-              bgcolor={'#f0f0f0'}
-              p={2}
-              borderRadius={1}
-              flexWrap="wrap"
-            >
+          {paginatedItems.length > 0 ? (
+            paginatedItems.map(({ name, quantity }) => (
               <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="flex-start"
-                flexBasis="60%"
-                flexGrow={1}
+                key={name}
+                display={'flex'}
+                justifyContent={'space-between'}
+                alignItems={'center'}
+                bgcolor={'#f0f0f0'}
+                p={2}
+                borderRadius={1}
+                flexWrap="wrap"
               >
-                <Typography variant={'h6'} color={'#333'}>
-                  {name.charAt(0).toUpperCase() + name.slice(1)}
-                </Typography>
+                <Box
+                  display="flex"
+                  flexDirection="column"
+                  alignItems="flex-start"
+                  flexBasis="60%"
+                  flexGrow={1}
+                >
+                  <Typography variant={'h6'} color={'#333'}>
+                    {name.charAt(0).toUpperCase() + name.slice(1)}
+                  </Typography>
+                </Box>
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="flex-end"
+                  flexBasis="40%"
+                  flexGrow={1}
+                  minWidth={150}
+                >
+                  <Button
+                    variant="contained"
+                    sx={{ bgcolor: "#F44336", color: "white", borderRadius: "5px", minWidth: "40px" }}
+                    onClick={() => removeItem(name)}
+                    size="small"
+                  >
+                    -
+                  </Button>
+                  <Typography
+                    variant={'h6'}
+                    color={'#333'}
+                    textAlign={'center'}
+                    mx={3}
+                  >
+                    {quantity}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    sx={{ bgcolor: "green", color: "white", borderRadius: "5px", minWidth: "40px" }}
+                    onClick={() => addItem(name)}
+                    size="small"
+                  >
+                    +
+                  </Button>
+                </Box>
               </Box>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="flex-end"
-                flexBasis="40%"
-                flexGrow={1}
-                minWidth={150}
-              >
-                <Button
-                  variant="contained"
-                  sx={{ bgcolor: "#F44336", color: "white", borderRadius: "5px", minWidth: "40px" }}
-                  onClick={() => removeItem(name)}
-                  size="small"
-                >
-                  -
-                </Button>
-                <Typography
-                  variant={'h6'}
-                  color={'#333'}
-                  textAlign={'center'}
-                  mx={3}
-                >
-                  {quantity}
-                </Typography>
-                <Button
-                  variant="contained"
-                  sx={{ bgcolor: "green", color: "white", borderRadius: "5px", minWidth: "40px" }}
-                  onClick={() => addItem(name)}
-                  size="small"
-                >
-                  +
-                </Button>
-              </Box>
-            </Box>
-          ))}
+            ))
+          ) : (
+            <Typography variant={'h6'} color={'#333'} textAlign={'center'} mt={2}>
+              Sorry, no item matches.
+            </Typography>
+          )}
         </Stack>
+        
+        {/* Pagination Controls */}
+        <Box display="flex" justifyContent="center" alignItems="center" mt={3}>
+          <Button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            variant="contained"
+            sx={{ mr: 2 }}
+          >
+            Previous
+          </Button>
+          <Typography variant="body1">{`Page ${currentPage} of ${totalPages}`}</Typography>
+          <Button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            variant="contained"
+            sx={{ ml: 2 }}
+          >
+            Next
+          </Button>
+        </Box>
       </Box>
     </Box>
   )
