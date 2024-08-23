@@ -1,3 +1,8 @@
+# App Preview
+<p align="center">
+  <img src="https://github.com/Eyimofe28/Images/blob/main/Screenshot%202024-08-23%20183217.png?raw=true" width="1000" height="700" />
+</p>
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
